@@ -1,6 +1,3 @@
-input.onPinPressed(TouchPin.P0, function () {
-    EVT_presence_detected()
-})
 function big_light_on () {
     basic.showLeds(`
         # # # # #
@@ -9,17 +6,6 @@ function big_light_on () {
         # # # # #
         . . . . .
         `)
-}
-function EVT_dayligh () {
-    if (status == 0) {
-        status = 0
-    } else if (status == 1) {
-        status = 0
-    } else if (status == 2) {
-        status = 0
-    } else {
-    	
-    }
 }
 function small_light_on () {
     basic.showLeds(`
@@ -31,12 +17,11 @@ function small_light_on () {
         `)
 }
 function EVT_night () {
-    if (status == 0) {
-        status = 0
-    } else if (status == 1) {
-        status = 0
-    } else if (status == 2) {
-        status = 0
+    if (status == NIGHT) {
+        status = NIGHT
+    } else if (status == DAY) {
+        small_light_off()
+        status = NIGHT
     } else {
     	
     }
@@ -46,17 +31,14 @@ function timer_reset () {
     is_timer_on = 0
 }
 function EVT_timer_end () {
-    if (status == 0) {
-        error()
-        status = 0
-    } else if (status == 1) {
-        error()
-        status = 1
-    } else if (status == 2) {
+    if (status == NIGHT) {
         big_light_off()
         small_light_on()
         timer_stop()
-        status = 1
+        status = NIGHT
+    } else if (status == DAY) {
+        error()
+        status = DAY
     } else {
     	
     }
@@ -98,23 +80,36 @@ function big_light_off () {
 function timer_stop () {
     is_timer_on = timer_max
 }
+function EVT_daylight () {
+    if (status == NIGHT) {
+        big_light_off()
+        small_light_off()
+        timer_stop()
+        status = DAY
+    } else if (status == DAY) {
+        status = DAY
+    } else {
+    	
+    }
+}
 function error () {
 	
 }
 function check_external_light () {
     if (Environment.ReadLightIntensity(AnalogPin.P1) > 100) {
-        EVT_dayligh()
+        EVT_daylight()
     } else {
         EVT_night()
     }
 }
 function EVT_presence_detected () {
-    if (status == 0) {
-        status = 0
-    } else if (status == 1) {
-        status = 0
-    } else if (status == 2) {
-        status = 0
+    if (status == NIGHT) {
+        small_light_off()
+        big_light_on()
+        timer_reset()
+        status = NIGHT
+    } else if (status == DAY) {
+        status = DAY
     } else {
     	
     }
@@ -122,14 +117,17 @@ function EVT_presence_detected () {
 let status = 0
 let is_timer_on = 0
 let timer_value = 0
+let DAY = 0
+let NIGHT = 0
 let timer_max = 0
 timer_max = 10
+NIGHT = 0
+DAY = 1
 timer_value = 0
 is_timer_on = 0
-// 0 = DAYLIGHT
-// 1 = NIGHT OFF
-// 2 = NIGHT ON
-status = 0
+// 0 = NIGHT
+// 1 = DAY
+status = DAY
 basic.forever(function () {
     update_timer()
     check_external_light()
